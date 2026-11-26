@@ -1,0 +1,107 @@
+Intelligent Programming Error Detection and Correction Suggestion System
+A small educational Python static-analysis prototype for the PBL project.
+Run:
+ python intelligent_error_detector.py
+ python intelligent_error_detector.py sample.py
+The tool detects Python syntax errors and selected common mistakes. It does
+not claim to detect every logical or runtime error.
+"""
+import ast
+import sys
+from pathlib import Path
+BUILTINS = set(dir(__builtins__))
+def check_source(source: str):
+ findings = []
+ # 1. Syntax errors: Python's parser provides a precise line and column.
+ try:
+ tree = ast.parse(source)
+ except SyntaxError as exc:
+ message = exc.msg
+ suggestion = "Check brackets, quotation marks, indentation, and the syntax near this line."
+ if "was never closed" in message:
+ suggestion = "Add the missing closing bracket/parenthesis/brace."
+ elif "unterminated string" in message:
+ suggestion = "Close the string with the matching quotation mark."
+ elif "expected ':'" in message:
+ suggestion = "Add ':' at the end of the if/elif/else/for/while/def/class statement."
+ elif "expected an indented block" in message:
+ suggestion = "Indent the statement that belongs to this block."
+ findings.append({
+ "line": exc.lineno or 1,
+ "column": exc.offset or 1,
+ "type": "Syntax Error",
+ "message": message,
+ "suggestion": suggestion,
+ })
+ return findings
+ # 2. Common style / likely-error checks.
+ parents = {}
+ for parent in ast.walk(tree):
+ for child in ast.iter_child_nodes(parent):
+ parents[child] = parent
+ for node in ast.walk(tree):
+ # Assignment used instead of comparison in a condition is a syntax
+ # error in Python, so this check instead flags suspicious identity tests.
+ if isinstance(node, ast.Compare):
+ for op in node.ops:
+ if isinstance(op, (ast.Is, ast.IsNot)):
+ findings.append({
+ "line": node.lineno,
+ "column": node.col_offset + 1,
+ "type": "Possible Logic Issue",
+ "message": "Identity comparison ('is'/'is not') used.",
+ "suggestion": "For ordinary value comparison, use '==' or '!='. Keep 'is' for 
+identity checks such as 'x is None'.",Intelligent Programming Error Detection and Correction Suggestion System
+A small educational Python static-analysis prototype for the PBL project.
+Run:
+ python intelligent_error_detector.py
+ python intelligent_error_detector.py sample.py
+The tool detects Python syntax errors and selected common mistakes. It does
+not claim to detect every logical or runtime error.
+"""
+import ast
+import sys
+from pathlib import Path
+BUILTINS = set(dir(__builtins__))
+def check_source(source: str):
+ findings = []
+ # 1. Syntax errors: Python's parser provides a precise line and column.
+ try:
+ tree = ast.parse(source)
+ except SyntaxError as exc:
+ message = exc.msg
+ suggestion = "Check brackets, quotation marks, indentation, and the syntax near this line."
+ if "was never closed" in message:
+ suggestion = "Add the missing closing bracket/parenthesis/brace."
+ elif "unterminated string" in message:
+ suggestion = "Close the string with the matching quotation mark."
+ elif "expected ':'" in message:
+ suggestion = "Add ':' at the end of the if/elif/else/for/while/def/class statement."
+ elif "expected an indented block" in message:
+ suggestion = "Indent the statement that belongs to this block."
+ findings.append({
+ "line": exc.lineno or 1,
+ "column": exc.offset or 1,
+ "type": "Syntax Error",
+ "message": message,
+ "suggestion": suggestion,
+ })
+ return findings
+ # 2. Common style / likely-error checks.
+ parents = {}
+ for parent in ast.walk(tree):
+ for child in ast.iter_child_nodes(parent):
+ parents[child] = parent
+ for node in ast.walk(tree):
+ # Assignment used instead of comparison in a condition is a syntax
+ # error in Python, so this check instead flags suspicious identity tests.
+ if isinstance(node, ast.Compare):
+ for op in node.ops:
+ if isinstance(op, (ast.Is, ast.IsNot)):
+ findings.append({
+ "line": node.lineno,
+ "column": node.col_offset + 1,
+ "type": "Possible Logic Issue",
+ "message": "Identity comparison ('is'/'is not') used.",
+ "suggestion": "For ordinary value comparison, use '==' or '!='. Keep 'is' for 
+identity checks such as 'x is None'.",
